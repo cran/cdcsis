@@ -12,8 +12,7 @@
 #' \item{ cdcor }{ the conditional distance correlation for each univariate/multivariate variable in \code{x}} 
 #' @author Canhong Wen, Wenliang Pan, Mian Huang, and Xueqin Wang
 #' @seealso \code{\link{cdcor}}
-#' @references Wen, C., Pan, W., Huang, M. and Wang, X., 2018. Sure independence screening adjusted for confounding covariates with ultrahigh-dimensional data. Statistica Sinica, 28, pp.293-317.
-#' @keywords conditional distance correlation, sure independence screening, ultrahigh dimensional
+#' @references Wen, C., Pan, W., Huang, M. and Wang, X., 2018. Sure independence screening adjusted for confounding covariates with ultrahigh-dimensional data. Statistica Sinica, 28, pp.293-317. URL http://www3.stat.sinica.edu.tw/statistica/J28N1/28-1.html
 #' @export
 #' @examples
 #' library(cdcsis)
@@ -36,9 +35,16 @@
 #' res <- cdcsis(x, y, z)
 #' head(res[["ix"]], n = 10)
 #' 
-cdcsis <- function(x, y, z = NULL, width,
+cdcsis <- function(x, y, z = NULL, 
+                   kernel.type = c("rectangle", "gauss"), k = 6, width,
                    threshold = nrow(y), distance = FALSE, index = 1, num.threads = 1) 
 {
+  conditional.distance <- FALSE
+  if (length(kernel.type) > 1) {
+    kernel.type <- "gauss"
+  } else {
+    kernel.type <- match.arg(kernel.type)
+  }
   z <- as.matrix(z)
   check_xyz_arguments(z)
   if (missing(width)) {
@@ -75,7 +81,9 @@ cdcsis <- function(x, y, z = NULL, width,
   
   x <- as.matrix(t(x))
   
-  res <- cdcsisCpp(2, x, variable_index, y, z, width, index, num.threads, 0, 0, 2)
+  kernel.type <- ifelse(kernel.type == "gauss", 1, 3)
+  res <- cdcsisCpp(2, x, variable_index, y, z, width, index, num.threads, 0, 0, 2,
+                   as.integer(kernel.type), as.integer(conditional.distance))
   res <- res[["statistic"]]
   list("ix" = order(res, decreasing = T)[1:threshold], 
        "cdcor" = res)
